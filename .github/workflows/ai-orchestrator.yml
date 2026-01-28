@@ -4,20 +4,24 @@ on:
     types: [labeled]
 
 jobs:
-  check-auth:
+  run-orchestrator:
     if: github.event.label.name == 'ai:build'
     runs-on: ubuntu-latest
     steps:
-      - name: Generate Token from GitHub App
-        uses: actions/create-github-app-token@v2
-        id: app-token
-        with:
-          app-id: ${{ vars.APP_ID }}
-          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - name: Proof of Concept Log
-        run: |
-          echo "Auth Successful! Token generated for the AI Agent."
-          gh issue comment ${{ github.event.issue.number }} --body "🤖 AI Agent has been summoned and authenticated."
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run Orchestrator Script
+        run: python scripts/orchestrator.py
         env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Built-in token
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
